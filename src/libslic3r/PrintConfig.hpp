@@ -1105,6 +1105,15 @@ PRINT_CONFIG_CLASS_DEFINE(
     ((ConfigOptionBool,                enable_filament_ramming))
     ((ConfigOptionBool,                support_multi_bed_types))
 
+    // Orca: mmu/skinnydip
+    ((ConfigOptionBools,               filament_use_skinnydip))
+    ((ConfigOptionFloats,              filament_skinnydip_distance))
+    ((ConfigOptionInts,              filament_skinnydip_tem))
+    ((ConfigOptionInts,              filament_skinnydip_melt_pause))
+    ((ConfigOptionInts,              filament_skinnydip_cooling_pause))
+    ((ConfigOptionFloats,              filament_skinnydip_insertion_speed))
+    ((ConfigOptionFloats,              filament_skinnydip_extration_speed))
+
     // Small Area Infill Flow Compensation
     ((ConfigOptionStrings,              small_area_infill_flow_compensation_model))
 

@@ -850,7 +850,10 @@ static std::vector<std::string> s_Preset_filament_options {
     "filament_loading_speed", "filament_loading_speed_start", "filament_load_time",
     "filament_unloading_speed", "filament_unloading_speed_start", "filament_unload_time", "filament_toolchange_delay", "filament_cooling_moves",
     "filament_cooling_initial_speed", "filament_cooling_final_speed", "filament_ramming_parameters",
-    "filament_multitool_ramming", "filament_multitool_ramming_volume", "filament_multitool_ramming_flow", "activate_chamber_temp_control"
+    "filament_multitool_ramming", "filament_multitool_ramming_volume", "filament_multitool_ramming_flow", "activate_chamber_temp_control",
+    // skinnydip
+    "filament_use_skinnydip", "filament_skinnydip_distance", "filament_skinnydip_tem", "filament_skinnydip_melt_pause",
+    "filament_skinnydip_cooling_pause", "filament_skinnydip_insertion_speed", "filament_skinnydip_extration_speed"
     };
 
 static std::vector<std::string> s_Preset_machine_limits_options {

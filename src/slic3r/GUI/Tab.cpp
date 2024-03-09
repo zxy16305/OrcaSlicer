@@ -3313,6 +3313,15 @@ void TabFilament::build()
             return sizer;
         });
 
+        optgroup = page->new_optgroup(L("String reductions"));
+        optgroup->append_single_option_line("filament_use_skinnydip", "semm");
+        optgroup->append_single_option_line("filament_skinnydip_distance", "semm");
+        optgroup->append_single_option_line("filament_skinnydip_tem", "semm");
+        optgroup->append_single_option_line("filament_skinnydip_melt_pause", "semm");
+        optgroup->append_single_option_line("filament_skinnydip_cooling_pause", "semm");
+        optgroup->append_single_option_line("filament_skinnydip_insertion_speed", "semm");
+        optgroup->append_single_option_line("filament_skinnydip_extration_speed", "semm");
+
         // Orca: multi tool is not supported yet.
 #ifdef ORCA_MULTI_TOOL
         optgroup = page->new_optgroup(L("Toolchange parameters with multi extruder MM printers"));
@@ -3420,7 +3429,9 @@ void TabFilament::toggle_options()
         for (auto el :
              {"filament_minimal_purge_on_wipe_tower", "filament_loading_speed_start", "filament_loading_speed",
               "filament_unloading_speed_start", "filament_unloading_speed", "filament_load_time", "filament_unload_time",
-              "filament_toolchange_delay", "filament_cooling_moves", "filament_cooling_initial_speed", "filament_cooling_final_speed"})
+              "filament_toolchange_delay", "filament_cooling_moves", "filament_cooling_initial_speed", "filament_cooling_final_speed",
+             "filament_use_skinnydip", "filament_skinnydip_distance", "filament_skinnydip_tem", "filament_skinnydip_melt_pause",
+             "filament_skinnydip_cooling_pause", "filament_skinnydip_insertion_speed", "filament_skinnydip_extration_speed"})
             toggle_option(el, !is_BBL_printer);
     }
 }

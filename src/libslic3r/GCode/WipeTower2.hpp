@@ -153,8 +153,15 @@ public:
         std::vector<float>  ramming_speed;
         float               nozzle_diameter;
         float               filament_area;
-		bool			    multitool_ramming;
-		float               multitool_ramming_time = 0.f;
+        bool                multitool_ramming;
+        float               multitool_ramming_time             = 0.f;
+        bool                filament_use_skinnydip             = false;
+        float               filament_skinnydip_distance        = 0.f;
+        int                 filament_skinnydip_tem             = 0;
+        float                 filament_skinnydip_melt_pause      = 0.f;
+        float                 filament_skinnydip_cooling_pause   = 0.f;
+        float               filament_skinnydip_insertion_speed = 0.f;
+        float               filament_skinnydip_extration_speed = 0.f;
     };
 
 private:

@@ -1880,7 +1880,60 @@ def = this->add("filament_loading_speed", coFloats);
     def->min = 0;
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloats { 10. });
-    
+
+    def = this->add("filament_use_skinnydip", coBools);
+    def->label = L("Enable Skinnydip");
+    def->tooltip = L("Enable Skinnydip");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBools { true });
+
+    def = this->add("filament_skinnydip_distance", coFloats);
+    def->label = L("Insertion distance");
+    def->tooltip = L("Insertion distance");
+    def->sidetext = L("mm");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionFloats { 20. });
+
+    def = this->add("filament_skinnydip_tem", coInts);
+    def->label = L("Tool change temperature");
+    def->tooltip = L("Tool change temperature");
+    def->sidetext = L("°C");
+    def->min = 0;
+    def->set_default_value(new ConfigOptionInts { 200 });
+
+    def = this->add("filament_skinnydip_melt_pause", coInts);
+    def->label = L("Pause in melt zone");
+    def->tooltip = L("Pause in melt zone.");
+    def->sidetext = L("ms");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInts { 0 });
+
+    def = this->add("filament_skinnydip_cooling_pause", coInts);
+    def->label = L("Pause before extraction");
+    def->tooltip = L("Pause before extraction.");
+    def->sidetext = L("ms");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionInts { 0 });
+
+    def = this->add("filament_skinnydip_insertion_speed", coFloats);
+    def->label = L("Speed to move into melt zone");
+    def->tooltip = L("Speed to move into melt zone.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 50. });
+
+    def = this->add("filament_skinnydip_extration_speed", coFloats);
+    def->label = L("Speed to extract from melt zone");
+    def->tooltip = L("Speed to extract from melt zone.");
+    def->sidetext = L("mm/s");
+    def->min = 0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloats { 100. });
+
     def = this->add("filament_density", coFloats);
     def->label = L("Density");
     def->tooltip = L("Filament density. For statistics only");

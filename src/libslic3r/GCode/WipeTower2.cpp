@@ -17,6 +17,7 @@
 #include <memory>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include "ClipperUtils.hpp"
 #include "GCodeProcessor.hpp"
@@ -335,9 +336,19 @@ public:
 	}
 
 	// Set extruder temperature, don't wait by default.
-	WipeTowerWriter2& set_extruder_temp(int temperature, bool wait = false)
+	WipeTowerWriter2& set_extruder_temp(int temperature, bool wait = false, int wait_temp_tolerance = 0)
 	{
-        m_gcode += "M" + std::to_string(wait ? 109 : 104) + " S" + std::to_string(temperature) + "\n";
+        if (wait && wait_temp_tolerance > 0){
+            // only for klipper
+            int wait_min_temperature  = temperature - wait_temp_tolerance;
+            int wait_max_temperature = temperature + wait_temp_tolerance;
+            std::ostringstream temp_gcode;
+            temp_gcode << "TEMPERATURE_WAIT SENSOR=extruder  minimum=" << wait_min_temperature
+                       << " maximum=" << wait_max_temperature << " \n";
+            m_gcode += temp_gcode.str();
+        } else {
+            m_gcode += "M" + std::to_string(wait ? 109 : 104) + " S" + std::to_string(temperature) + "\n";
+        }
         return *this;
     }
 
@@ -612,14 +623,21 @@ void WipeTower2::set_extruder(size_t idx, const PrintConfig& config)
     // If this is a single extruder MM printer, we will use all the SE-specific config values.
     // Otherwise, the defaults will be used to turn off the SE stuff.
     if (m_semm) {
-        m_filpar[idx].loading_speed           = float(config.filament_loading_speed.get_at(idx));
-        m_filpar[idx].loading_speed_start     = float(config.filament_loading_speed_start.get_at(idx));
-        m_filpar[idx].unloading_speed         = float(config.filament_unloading_speed.get_at(idx));
-        m_filpar[idx].unloading_speed_start   = float(config.filament_unloading_speed_start.get_at(idx));
-        m_filpar[idx].delay                   = float(config.filament_toolchange_delay.get_at(idx));
-        m_filpar[idx].cooling_moves           = config.filament_cooling_moves.get_at(idx);
-        m_filpar[idx].cooling_initial_speed   = float(config.filament_cooling_initial_speed.get_at(idx));
-        m_filpar[idx].cooling_final_speed     = float(config.filament_cooling_final_speed.get_at(idx));
+        m_filpar[idx].loading_speed                        = float(config.filament_loading_speed.get_at(idx));
+        m_filpar[idx].loading_speed_start                  = float(config.filament_loading_speed_start.get_at(idx));
+        m_filpar[idx].unloading_speed                      = float(config.filament_unloading_speed.get_at(idx));
+        m_filpar[idx].unloading_speed_start                = float(config.filament_unloading_speed_start.get_at(idx));
+        m_filpar[idx].delay                                = float(config.filament_toolchange_delay.get_at(idx));
+        m_filpar[idx].cooling_moves                        = config.filament_cooling_moves.get_at(idx);
+        m_filpar[idx].cooling_initial_speed                = float(config.filament_cooling_initial_speed.get_at(idx));
+        m_filpar[idx].cooling_final_speed                  = float(config.filament_cooling_final_speed.get_at(idx));
+        m_filpar[idx].filament_use_skinnydip               = config.filament_use_skinnydip.get_at(idx);
+        m_filpar[idx].filament_skinnydip_distance          = float(config.filament_skinnydip_distance.get_at(idx));
+        m_filpar[idx].filament_skinnydip_tem               = config.filament_skinnydip_tem.get_at(idx);
+        m_filpar[idx].filament_skinnydip_melt_pause        = float(config.filament_skinnydip_melt_pause.get_at(idx));
+        m_filpar[idx].filament_skinnydip_cooling_pause     = float(config.filament_skinnydip_cooling_pause.get_at(idx));
+        m_filpar[idx].filament_skinnydip_insertion_speed   = float(config.filament_skinnydip_insertion_speed.get_at(idx));
+        m_filpar[idx].filament_skinnydip_extration_speed   = float(config.filament_skinnydip_extration_speed.get_at(idx));
     }
 
     m_filpar[idx].filament_area = float((M_PI/4.f) * pow(config.filament_diameter.get_at(idx), 2)); // all extruders are assumed to have the same filament diameter at this point
@@ -867,6 +885,13 @@ void WipeTower2::toolchange_Unload(
     writer.append("; CP TOOLCHANGE UNLOAD\n")
         .change_analyzer_line_width(line_width);
 
+    bool use_skinnydip    = m_filpar[m_current_tool].filament_use_skinnydip;
+    bool use_skinnydip_temp = m_semm && use_skinnydip && m_filpar[m_current_tool].filament_skinnydip_tem > 0;
+    if (use_skinnydip_temp) {
+        // set change temp before ramming
+        writer.set_extruder_temp(m_filpar[m_current_tool].filament_skinnydip_tem, false);
+    }
+
 	unsigned i = 0;										// iterates through ramming_speed
 	m_left_to_right = true;								// current direction of ramming
 	float remaining = xr - xl ;							// keeps track of distance to the next turnaround
@@ -956,7 +981,7 @@ void WipeTower2::toolchange_Unload(
     // Wipe tower should only change temperature with single extruder MM. Otherwise, all temperatures should
     // be already set and there is no need to change anything. Also, the temperature could be changed
     // for wrong extruder.
-    if (m_semm) {
+    if (m_semm && !use_skinnydip) {
         if (new_temperature != 0 && (new_temperature != m_old_temperature || is_first_layer()) ) { 	// Set the extruder temperature, but don't wait.
             // If the required temperature is the same as last time, don't emit the M104 again (if user adjusted the value, it would be reset)
             // However, always change temperatures on the first layer (this is to avoid issues with priming lines turned off).
@@ -984,6 +1009,31 @@ void WipeTower2::toolchange_Unload(
             speed += speed_inc;
             writer.load_move_x_advanced(old_x, -m_cooling_tube_length, speed);
         }
+    }
+
+    // skinnydip
+    if (use_skinnydip) {
+        writer.append("; SKINNYDIP START\n");
+        // wait temp after skindip
+        if (use_skinnydip_temp) {
+            writer.set_extruder_temp(m_filpar[m_current_tool].filament_skinnydip_tem, true, 5);
+        }
+        writer.load(m_filpar[m_current_tool].filament_skinnydip_distance, m_filpar[m_current_tool].filament_skinnydip_insertion_speed);
+        if (m_filpar[m_current_tool].filament_skinnydip_melt_pause > 0) {
+            writer.wait(m_filpar[m_current_tool].filament_skinnydip_melt_pause);
+        }
+        writer.load(-m_filpar[m_current_tool].filament_skinnydip_distance, m_filpar[m_current_tool].filament_skinnydip_extration_speed);
+        if (m_filpar[m_current_tool].filament_skinnydip_cooling_pause > 0) {
+            writer.wait(m_filpar[m_current_tool].filament_skinnydip_cooling_pause);
+        }
+        writer.append("; SKINNYDIP END\n");
+    }
+
+    // change temp to max(old, new)
+    // test by zxy16305
+    if (m_semm) {
+        writer.append("; CHANGE TEMP\n");
+        writer.set_extruder_temp(std::max(m_old_temperature, new_temperature));
     }
 
     if (m_semm) {
@@ -1141,6 +1191,13 @@ void WipeTower2::toolchange_Wipe(
         m_left_to_right = !m_left_to_right;
 
     writer.set_extrusion_flow(m_extrusion_flow); // Reset the extrusion flow.
+
+    // set new material temp
+    if (m_semm) {
+        int temperature = is_first_layer() ? m_filpar[m_current_tool].first_layer_temperature : m_filpar[m_current_tool].temperature;
+        writer.set_extruder_temp(temperature);
+        m_old_temperature = temperature;
+    }
 }
 
 
