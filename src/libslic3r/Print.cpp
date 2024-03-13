@@ -2622,16 +2622,16 @@ void Print::_make_wipe_tower()
                         if (m_config.purge_in_prime_tower) {
                             volume_to_wipe = wipe_volumes[current_extruder_id][extruder_id]; // total volume to wipe after this toolchange
                             volume_to_wipe *= m_config.flush_multiplier;
-                            // Not all of that can be used for infill purging:
-                            volume_to_wipe -= (float) m_config.filament_minimal_purge_on_wipe_tower.get_at(extruder_id);
-
-                            // try to assign some infills/objects for the wiping:
-                            volume_to_wipe = layer_tools.wiping_extrusions().mark_wiping_extrusions(*this, current_extruder_id, extruder_id,
-                                                                                                    volume_to_wipe);
-
-                            // add back the minimal amount toforce on the wipe tower:
-                            volume_to_wipe += (float) m_config.filament_minimal_purge_on_wipe_tower.get_at(extruder_id);
                         }
+                        // Not all of that can be used for infill purging:
+                        volume_to_wipe -= (float) m_config.filament_minimal_purge_on_wipe_tower.get_at(extruder_id);
+
+                        // try to assign some infills/objects for the wiping:
+                        volume_to_wipe = layer_tools.wiping_extrusions().mark_wiping_extrusions(*this, current_extruder_id, extruder_id,
+                                                                                                volume_to_wipe);
+
+                        // add back the minimal amount toforce on the wipe tower:
+                        volume_to_wipe += (float) m_config.filament_minimal_purge_on_wipe_tower.get_at(extruder_id);
 
                         // request a toolchange at the wipe tower with at least volume_to_wipe purging amount
                         wipe_tower.plan_toolchange((float) layer_tools.print_z, (float) layer_tools.wipe_tower_layer_height,
