@@ -357,7 +357,7 @@ public:
 	{
         if (time==0.f)
             return *this;
-        m_gcode += "G4 S" + Slic3r::float_to_string_decimal_point(time, 3) + "\n";
+        m_gcode += "G4 P" + Slic3r::float_to_string_decimal_point(time * 1000, 3) + "\n";
 		return *this;
     }
 
@@ -890,6 +890,8 @@ void WipeTower2::toolchange_Unload(
     if (use_skinnydip_temp) {
         // set change temp before ramming
         writer.set_extruder_temp(m_filpar[m_current_tool].filament_skinnydip_tem, false);
+        // wait temp diff 10
+//        writer.set_extruder_temp(m_filpar[m_current_tool].filament_skinnydip_tem, true, 20);
     }
 
 	unsigned i = 0;										// iterates through ramming_speed
@@ -1018,23 +1020,17 @@ void WipeTower2::toolchange_Unload(
         if (use_skinnydip_temp) {
             writer.set_extruder_temp(m_filpar[m_current_tool].filament_skinnydip_tem, true, 5);
         }
-        writer.load(m_filpar[m_current_tool].filament_skinnydip_distance, m_filpar[m_current_tool].filament_skinnydip_insertion_speed);
+        writer.load(m_filpar[m_current_tool].filament_skinnydip_distance, m_filpar[m_current_tool].filament_skinnydip_insertion_speed * 60);
         if (m_filpar[m_current_tool].filament_skinnydip_melt_pause > 0) {
-            writer.wait(m_filpar[m_current_tool].filament_skinnydip_melt_pause);
+            writer.wait(m_filpar[m_current_tool].filament_skinnydip_melt_pause / 1000);
         }
-        writer.load(-m_filpar[m_current_tool].filament_skinnydip_distance, m_filpar[m_current_tool].filament_skinnydip_extration_speed);
+        writer.load(-m_filpar[m_current_tool].filament_skinnydip_distance, m_filpar[m_current_tool].filament_skinnydip_extration_speed * 60);
         if (m_filpar[m_current_tool].filament_skinnydip_cooling_pause > 0) {
-            writer.wait(m_filpar[m_current_tool].filament_skinnydip_cooling_pause);
+            writer.wait(m_filpar[m_current_tool].filament_skinnydip_cooling_pause / 1000);
         }
         writer.append("; SKINNYDIP END\n");
     }
 
-    // change temp to max(old, new)
-    // test by zxy16305
-    if (m_semm) {
-        writer.append("; CHANGE TEMP\n");
-        writer.set_extruder_temp(std::max(m_old_temperature, new_temperature));
-    }
 
     if (m_semm) {
         writer.append("; Cooling park\n");
@@ -1044,6 +1040,13 @@ void WipeTower2::toolchange_Unload(
         const auto _e = -m_cooling_tube_length / 2.f + m_parking_pos_retraction - m_cooling_tube_retraction;
         if (_e != 0.f)
             writer.retract(_e, 2000);
+    }
+
+    // change temp to max(old, new)
+    // test by zxy16305
+    if (m_semm) {
+        writer.append("; CHANGE TEMP\n");
+        writer.set_extruder_temp(std::max(m_old_temperature, new_temperature));
     }
 
     // this is to align ramming and future wiping extrusions, so the future y-steps can be uniform from the start:
